@@ -6,9 +6,9 @@
 <meta charset="ISO-8859-1">
 <title>X-workz</title>
 </head>
-<body>
+<body  leftmargin="500px" marginheight="120px" style='background-color:white(0,234,343)'>
 
-<h1>Lion jsp File</h1>
+<h1 style='color:Coral'>Lion jsp File</h1>
 
 <form action="ManiServlet" method="post">
 <pre>
@@ -23,7 +23,7 @@ Address<textarea rows="5" cols="15" name="address"></textarea><br>
 
 </pre>
 
-	<input type="submit" name="send">
+	<input type="submit" name="send" style='color:green'>
 </form>
 
 </body>

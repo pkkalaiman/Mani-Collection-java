@@ -6,7 +6,7 @@
 <meta charset="ISO-8859-1">
 <title>Submitted Details</title>
 </head>
-<body>
+<body style="background-color: Aqua">
 
 <h2>
 <span style='color:green'>
