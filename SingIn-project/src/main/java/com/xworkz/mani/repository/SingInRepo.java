@@ -1,9 +1,11 @@
 package com.xworkz.mani.repository;
 
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 
 import com.xworkz.mani.Entity.SingInEntity;
+import com.xworkz.mani.Entity.TechnologyEntity;
 
 public interface SingInRepo {
 
@@ -33,10 +35,20 @@ public interface SingInRepo {
 		return null;
 	}
 
+	boolean logincount(String userId, int count);
+
 	boolean update(SingInEntity userEntity);
 
-	boolean updatePassword(String userId, String password, Boolean resetPassword);
+	boolean updatePassword(String userId, String password, Boolean resetPassword, LocalTime expTime);
 
-	boolean logincount(String userId, int count);
+	default Long findCountByEmailAndUserAndMobile(String email, String userId, long mobile) {
+		return null;
+	}
+
+	boolean saveTechnology(TechnologyEntity entity);
+
+	default List<TechnologyEntity> viewTechnology(String view) {
+		return null;
+	}
 
 }

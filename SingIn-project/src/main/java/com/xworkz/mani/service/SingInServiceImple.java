@@ -1,6 +1,7 @@
 package com.xworkz.mani.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import com.xworkz.mani.DTO.SingInDTO;
 import com.xworkz.mani.Entity.SingInEntity;
+import com.xworkz.mani.Entity.TechnologyEntity;
 import com.xworkz.mani.repository.SingInRepo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ public class SingInServiceImple implements SingInService {
 
 	@Autowired
 	private SingInRepo singinrepo;
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
@@ -51,7 +54,7 @@ public class SingInServiceImple implements SingInService {
 	}
 
 	public SingInServiceImple() {
-		log.info("" + this.getClass().getSimpleName());
+		log.info("Created " + this.getClass().getSimpleName());
 	}
 
 	@Override
@@ -61,9 +64,14 @@ public class SingInServiceImple implements SingInService {
 		Long userCount = this.singinrepo.findByUser(userDTO.getUserId());
 		Long mobileCount = this.singinrepo.findByMobile(userDTO.getMobile());
 
+		log.error("emailCount = " + emailCount);
+		log.error("userCount = " + userCount);
+		log.error("mobileCount = " + mobileCount);
+
 		Set<ConstraintViolation<SingInDTO>> violations = validate(userDTO);
+	
 		if (violations != null && !violations.isEmpty()) {
-			log.info("there is Violation in dto");
+			log.info("there is Violation in dto"+userDTO);
 			return violations;
 		}
 		if (!userDTO.getPassword().equals(userDTO.getConfirmPassword())) {
@@ -73,7 +81,6 @@ public class SingInServiceImple implements SingInService {
 			log.info("No Violations procceding to save");
 
 			SingInEntity entity = new SingInEntity();
-			// BeanUtils.copyProperties(userDTO, entity);
 			entity.setUserId(userDTO.getUserId());
 			entity.setEmail(userDTO.getEmail());
 			entity.setMobile(userDTO.getMobile());
@@ -81,16 +88,16 @@ public class SingInServiceImple implements SingInService {
 			entity.setCreatedBy(userDTO.getUserId());
 			entity.setCreatedDate(LocalDateTime.now());
 			entity.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+			entity.setResetPassword(false);
+			entity.setExpTime(LocalTime.of(0, 0, 0));
 
 			boolean saved = this.singinrepo.save(entity);
 			log.info("Saved in Entity-" + saved);
 
 			if (saved) {
-				boolean sent = this.sendMail(userDTO.getEmail());
+				boolean sent = this.sendMail(userDTO.getEmail(), "Thanks for Registration");
 				log.info("Email sent -:" + sent);
-
 			}
-
 		}
 		return Collections.emptySet();
 	}
@@ -106,18 +113,29 @@ public class SingInServiceImple implements SingInService {
 	@Override
 	public SingInDTO userSignIn(String userId, String password) {
 		log.info("Created in UserSingIn in Service..");
+
 		SingInEntity entity = this.singinrepo.userSignIn(userId);
+
 		SingInDTO dto = new SingInDTO();
 		BeanUtils.copyProperties(entity, dto);
-		log.info("matching--" + passwordEncoder.matches(password, entity.getPassword()));
+
+		log.info("Dto " + dto);
+		log.info("encrypted password & given password is matching "
+				+ passwordEncoder.matches(password, entity.getPassword()));
+
+		log.info("Time Matching :" + entity.getExpTime().isBefore(LocalTime.now()));
+		log.info("Present Time :" + LocalTime.now());
+		log.info("Password Expiry Time :" + entity.getExpTime());
+		log.info("Time :" + LocalTime.now().isBefore(entity.getExpTime()));
 
 		if (entity.getLoginCount() >= 3) {
 			log.info("Running in Login count condition");
 			return dto;
 		}
-
 		if (dto.getUserId().equals(userId) && passwordEncoder.matches(password, entity.getPassword())) {
+			log.info("Running userId matching and password matching");
 			return dto;
+
 		} else {
 			this.singinrepo.logincount(userId, entity.getLoginCount() + 1);
 			log.info("count of login" + entity.getLoginCount() + 1);
@@ -128,10 +146,13 @@ public class SingInServiceImple implements SingInService {
 	@Override
 	public List<SingInDTO> findAll() {
 		log.info("Created in FindAll in Service..");
+
 		List<SingInEntity> sinentity = this.singinrepo.findAll();
 		List<SingInDTO> list = new ArrayList<SingInDTO>();
+
 		for (SingInEntity singentity : sinentity) {
 			SingInDTO dto = new SingInDTO();
+
 			BeanUtils.copyProperties(singentity, dto);
 			list.add(dto);
 		}
@@ -140,12 +161,16 @@ public class SingInServiceImple implements SingInService {
 
 	@Override
 	public Long findByMobile(Long mobile) {
+		log.info("Running in FindByMobile in Service...");
+
 		Long mobilecount = this.singinrepo.findByMobile(mobile);
 		return mobilecount;
 	}
 
 	@Override
 	public Long findByUser(String user) {
+		log.info("Runnning in FindByUser in Service...");
+
 		Long userCount = this.singinrepo.findByUser(user);
 		return userCount;
 	}
@@ -153,21 +178,28 @@ public class SingInServiceImple implements SingInService {
 	@Override
 	public SingInDTO updatePassword(String userId, String password, String confirmPassword) {
 		log.info("Createt in UpdatePassword");
-		SingInEntity sinentity = new SingInEntity();
-		if (password.equals(confirmPassword)) {
-			boolean passwordUpdated = this.singinrepo.updatePassword(userId, passwordEncoder.encode(password), false);
-			log.info("passwordUpdated--" + passwordUpdated);
 
+		log.info("passsword -" + password, confirmPassword);
+
+		if (password.equals(confirmPassword)) {
+			log.info("password  " + password);
+
+			boolean passwordUpdated = this.singinrepo.updatePassword(userId, passwordEncoder.encode(password), false,
+					LocalTime.of(0, 0, 0));
+			log.info("passwordUpdated " + passwordUpdated);
 		}
 		return SingInService.super.updatePassword(userId, password, confirmPassword);
 	}
 
 	@Override
-	public boolean sendMail(String email) {
+	public boolean sendMail(String email, String text) {
+		log.info("Runnning in SendEmail in Servicee...");
+
 		String portNumber = "587";
 		String hostName = "smtp.office365.com";
-		String fromEmail = "pkkalaiman@gmail.com";
-		String password = "pkkalaiman@123";
+		String fromEmail = "maniit1234@outlook.com";
+		String password = "manimani@123";
+		String email1 = email;
 		String to = email;
 
 		Properties prop = new Properties();
@@ -188,10 +220,13 @@ public class SingInServiceImple implements SingInService {
 		try {
 			message.setFrom(new InternetAddress(fromEmail));
 			message.setSubject("Registration  Completed");
-			message.setText("Thanks for registration and your password is" + reSetPassword);
-			message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+			message.setText("Thanks for registration and your password is" + text);
+			message.addRecipient(Message.RecipientType.TO, new InternetAddress(email1));
 			Transport.send(message);
+			log.info("Sending Message to" + to);
+
 			log.info("mail sent sucessfully");
+
 		} catch (MessagingException e) {
 			e.printStackTrace();
 		}
@@ -201,41 +236,93 @@ public class SingInServiceImple implements SingInService {
 	@Override
 	public SingInDTO reSetPassword(String email) {
 
-		log.info("ReSetd password " + reSetPassword);
-
+		String resetpwd = DefaultPasswordGenerator.generate(6);
 		SingInEntity entity = this.singinrepo.reSetPassword(email);
-		
+		// log.info("ReSetd password--- " + resetpwd);
+
 		if (entity != null) {
-			
 			log.info("entity found for email" + email);
-			
-			entity.setPassword(passwordEncoder.encode(reSetPassword));
+
+			entity.setPassword(passwordEncoder.encode(resetpwd));
 			entity.setUpdatedBy("System");
 			entity.setUpdatedDate(LocalDateTime.now());
 			entity.setLoginCount(0);
 			entity.setResetPassword(true);
+			entity.setExpTime(LocalTime.now().plusSeconds(120));
+
 			boolean update = this.singinrepo.update(entity);
+
 			if (update) {
-				sendMail(entity.getEmail());
+				sendMail(entity.getEmail(),
+						"your Reset Password is-> :" + resetpwd + " " + "Log in within 2 minutes before expireing");
+				log.info("resetpwd-  " + resetpwd);
 			}
 			log.info("Updated " + update);
-			
+
 			SingInDTO updatedDto = new SingInDTO();
 			BeanUtils.copyProperties(entity, updatedDto);
 
 			return updatedDto;
 		}
 		log.info("entity not found for email" + email);
-		
+
 		return SingInService.super.reSetPassword(email);
 	}
 
+
+	@Override
+	public SingInDTO updateProfile(String userId, String email, Long mobile, String imagePath) {
+		log.info("Running in updated Profile in Serviceee....");
+
+		SingInEntity sinentity = this.singinrepo.reSetPassword(email);
+
+		log.info("userId :" + userId + "email :" + email + "mobile :" + mobile + "image name :" + imagePath);
+
+		sinentity.setUserId(userId);
+		sinentity.setMobile(mobile);
+		sinentity.setPicName(imagePath);
+		boolean update = this.singinrepo.update(sinentity);
+		log.info("userudate" + update);
+
+		return SingInService.super.updateProfile(userId, email, mobile, imagePath);
+	}
+
+	@Override
+	public SingInDTO addTechnology(String userId, TechnologyEntity technologyEntity) {
+
+		log.info("Running addTechnology in service impl");
+
+		SingInEntity singInEntity = this.singinrepo.userSignIn(userId);
+		technologyEntity.setCreatedBy(userId);
+		technologyEntity.setSingInEntity(singInEntity);
+		log.info("accessing entity" + singInEntity);
+
+		boolean saved = this.singinrepo.saveTechnology(technologyEntity);
+		log.info("Technologies saved in database" + saved);
+
+		return SingInService.super.addTechnology(userId, technologyEntity);
+	}
+
+	@Override
+	public List<TechnologyEntity> viewTechnology(String userId) {
+		log.info("Running view Technology in service imple");
+
+		SingInEntity signUpEntity = this.singinrepo.userSignIn(userId);
+		List<TechnologyEntity> technology = signUpEntity.getTechnology();
+		log.info("Getting technologies as per userId : " + userId + " -> " + technology);
+
+		return technology;
+	}
+	
+	
+
 	public final static class DefaultPasswordGenerator {
 		private static final String[] charCategories = new String[] { "abcdefghijklmnopqrstuvwxyz",
-				"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789" };
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "@#$%&" };
 
 		public static String generate(int length) {
 			StringBuilder password = new StringBuilder(length);
+
 			Random random = new Random(System.nanoTime());
 
 			for (int i = 0; i < length; i++) {
@@ -243,7 +330,6 @@ public class SingInServiceImple implements SingInService {
 				int position = random.nextInt(charCategory.length());
 				password.append(charCategory.charAt(position));
 			}
-
 			return new String(password);
 		}
 	}

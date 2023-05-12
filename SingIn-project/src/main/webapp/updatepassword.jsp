@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>Insert title here</title>
+<title>P.K.Mani</title>
 </head>
 <body>
 
@@ -38,20 +38,16 @@
 				aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
-
-			<form class="d-flex">
-				<a href="SingUp.jsp" class="form-control me-0"
-					style='color: OrangeRed'>SingUp Page</a>
-			</form>
-
-			<form class="d-flex">
-				<a href="SingIn.jsp" class="form-control me-0"
-					style='color: OrangeRed'>SingIn Page</a>
-			</form>
+			
+			
+			 					<a href="SingIn.jsp" class="btn btn-primary"> SingIn</a>
+			 					<a href="SingUp.jsp" class="btn btn-primary"> SingUp</a>
+			 					<a href="index.jsp" class="btn btn-primary"> Home</a>
+			
 		</div>
 	</nav>
 
-	<div align="center">User Name:${dto.userID}</div>
+	<div align="center">User Name:${userID}</div>
 	<div align="center">
 		<form action="passwordUpdate" method="post" class="container col-20 col-sm-8 col-md-5 shadow-lg p-5 mb-5 bg-white mx-auto d-block border border-primary rounded-lg 
 m-5 pb-5 bg-i  nfo">
@@ -60,19 +56,18 @@ m-5 pb-5 bg-i  nfo">
 				<tr>
 					<td>User ID</td>
 
-					<td><input type="text" name="userId" value="${dto.userID}"
-						readonly="readonly"></td>
+					<td><input type="text" name="userId" value="${userID}"></td>
 				</tr>
 				<tr>
 					<td>New Password</td>
-					<td><input type="password" name="password" id="userPassword">
+					<td><input type="password" name="password" id="userPassword" placeholder="New Password">
 						<span id="passwordError" style="color: red"></span> <input
 						type="checkbox" onclick="myFunction1()">Show Password</td>
 				</tr>
 				<tr>
 					<td>ConfirmPassword</td>
 					<td><input type="password" name="confirmPassword"
-						id="userConfirmPassword" onblur="ValidePassword()"> <span
+						id="userConfirmPassword" onblur="ValidePassword()" placeholder="Confirm Password"> <span
 						id="passwordCompare" style="color: red"></span> <input
 						type="checkbox" onclick="myFunction2()">Show Confirm
 						Password</td>

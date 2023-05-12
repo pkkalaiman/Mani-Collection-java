@@ -1,5 +1,6 @@
 package com.xworkz.mani.configuration;
 
+
 import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
@@ -10,9 +11,10 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -32,6 +34,7 @@ public class SingInConfiguration {
 
 	@Bean
 	public LocalContainerEntityManagerFactoryBean localContainerEntityManagerFactoryBean() {
+		log.info("Runnning in LocalContainerEntityManagerFactoryBean...");
 		LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
 		bean.setPackagesToScan("com.xworkz.mani.Entity");
 		bean.setDataSource(dataSource());
@@ -47,10 +50,15 @@ public class SingInConfiguration {
 		datasource.setUsername("root");
 		return datasource;
 	}
-	
+
+	public MultipartResolver multipartresolver() {
+		log.info("Created in MultipartResolver...");
+		return new StandardServletMultipartResolver();
+	}
 
 	@Bean
 	public PasswordEncoder encoder() {
+		log.info("Created in PasswordEncoder in Configuration...");
 		return new BCryptPasswordEncoder();
 	}
 
